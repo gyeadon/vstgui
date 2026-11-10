@@ -1955,10 +1955,10 @@ float TextEditorView::getCharWidth (size_t row, size_t pos) const
 
 	if (md.style->tabWidth > 0 && str[0] == '\t')
 	{
-		auto posOffset = 0;
-		auto numTabs = 0u;
+		size_t posOffset = 0;
+		size_t numTabs = 0;
 		size_t numSpaces = md.style->tabWidth;
-		for (auto index = 0u; index <= pos; ++index)
+		for (size_t index = 0; index <= pos; ++index)
 		{
 			if (md.model.text[row + index] == '\t')
 			{
