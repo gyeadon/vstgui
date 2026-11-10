@@ -14,6 +14,7 @@
 #include "../../../ccolor.h"
 #include "d2dgraphicscontext.h"
 #include <mutex>
+#include <utility>
 #include <dwrite.h>
 #include <d2d1.h>
 
@@ -78,9 +79,82 @@ struct CustomFonts
 		factory5->CreateFontCollectionFromFontSet (fontSet.get (), fontCollection.adoptPtr ());
 	}
 
+	~CustomFonts ()
+	{
+		// Custom font realted clean-up
+		fontCollection.reset();
+		fontSet.reset();
+		if (memoryFontLoader && memoryFontFactory)
+		{
+			memoryFontFactory->UnregisterFontFileLoader(memoryFontLoader.get());
+		}
+	}
+
+	bool addMemoryFont (const void* data, uint32_t size)
+	{
+		if (!data || size == 0)
+			return false;
+
+		// Create and register the loader on first use.
+		if (!memoryFontLoader)
+		{
+			auto* factory = getDWriteFactory ();
+
+			if (!factory || FAILED(factory->QueryInterface<IDWriteFactory5> (memoryFontFactory.adoptPtr())))
+				return false;
+
+			if (FAILED(memoryFontFactory->CreateInMemoryFontFileLoader (memoryFontLoader.adoptPtr())))
+				return false;
+
+			if (FAILED(memoryFontFactory->RegisterFontFileLoader (memoryFontLoader.get())))
+			{
+				memoryFontLoader.reset();
+				return false;
+			}
+		}
+
+		// DirectWrite copies the supplied bytes when ownerObject is null.
+		COM::Ptr<IDWriteFontFile> fontFile;
+
+		if (FAILED(memoryFontLoader->CreateInMemoryFontFileReference(memoryFontFactory.get(), data, size, nullptr, fontFile.adoptPtr())))
+			return false;
+
+		// Build a replacement collection containing existing fonts and the newly registered memory font.
+		COM::Ptr<IDWriteFontSetBuilder1> builder;
+
+		if (FAILED(memoryFontFactory->CreateFontSetBuilder(builder.adoptPtr())))
+			return false;
+
+		if (fontSet && FAILED(builder->AddFontSet(fontSet.get())))
+			return false;
+
+		if (FAILED(builder->AddFontFile(fontFile.get())))
+			return false;
+
+		COM::Ptr<IDWriteFontSet> newSet;
+
+		if (FAILED(builder->CreateFontSet(newSet.adoptPtr())))
+			return false;
+
+		COM::Ptr<IDWriteFontCollection1> newCollection;
+
+		if (FAILED(memoryFontFactory->CreateFontCollectionFromFontSet(newSet.get(), newCollection.adoptPtr ())))
+			return false;
+
+		// Publish the new collection only after everything succeeds.
+		fontCollection = std::move(newCollection);
+		fontSet = std::move(newSet);
+
+		return true;
+	}
+
 private:
 	COM::Ptr<IDWriteFontSet> fontSet;
 	COM::Ptr<IDWriteFontCollection1> fontCollection;
+
+	// DirectWrite objects for memory-resident fonts
+	COM::Ptr<IDWriteFactory5> memoryFontFactory;
+	COM::Ptr<IDWriteInMemoryFontFileLoader> memoryFontLoader;
 
 	std::vector<std::wstring> getDirectoryContents (const UTF8String& path) const
 	{
@@ -199,6 +273,22 @@ void D2DFont::initialize (const UTF8String& resourceBasePath)
 
 //-----------------------------------------------------------------------------
 void D2DFont::terminate () { D2DFontPrivate::customFonts.reset (); }
+
+//-----------------------------------------------------------------------------
+#if VSTGUI_WIN32_CUSTOMFONT_SUPPORT
+bool D2DFont::registerMemoryFont (const void* data, uint32_t size)
+{
+	// Added fonts will not survive re-initialisation
+	if (auto* fonts = D2DFontPrivate::getCustomFonts ())
+		return fonts->addMemoryFont (data, size);
+	return false;
+}
+#else
+bool D2DFont::registerMemoryFont (const void*, uint32_t)
+{
+	return false;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 D2DFont::D2DFont (const UTF8String& name, const CCoord& size, const int32_t& style)

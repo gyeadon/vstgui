@@ -31,6 +31,9 @@ public:
 	static void initialize (const UTF8String& resourceBasePath);
 	static void terminate ();
 
+	// Register an in-memory font with DirectWrite
+	static bool registerMemoryFont (const void* data, uint32_t size);
+
 protected:
 	~D2DFont ();
 	
