@@ -430,6 +430,9 @@ bool Win32Frame::setMouseCursor (CCursorType type)
 		case kCursorCrosshair:
 			cursor = LoadCursor (nullptr, IDC_CROSS);
 			break;
+		case kCursorIBeam:
+			cursor = LoadCursor (nullptr, IDC_IBEAM);
+			break;
 		case kCursorMovableObject:
 			[[fallthrough]];
 		case kCursorMoveObject:
