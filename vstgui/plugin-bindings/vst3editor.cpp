@@ -870,7 +870,7 @@ void VST3Editor::onMouseEvent (MouseEvent& event, CFrame* frame)
 				controllerMenu = new COptionMenu ();
 			else
 				controllerMenu->addSeparator ();
-			auto* zoomMenu = new COptionMenu ();
+			auto zoomMenu = makeOwned<COptionMenu>();
 			zoomMenu->setStyle (COptionMenu::kMultipleCheckStyle);
 			char zoomFactorString[128];
 			int32_t zoomFactorTag = 0;
