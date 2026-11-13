@@ -972,6 +972,8 @@ void VST3Editor::onMouseEvent (MouseEvent& event, CFrame* frame)
 		}
 		if (controllerMenu)
 			controllerMenu->forget ();
+		if (event.consumed)
+			castMouseDownEvent (event).ignoreFollowUpMoveAndUpEvents (true);
 	}
 }
 
