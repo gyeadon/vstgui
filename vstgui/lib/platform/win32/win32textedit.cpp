@@ -62,7 +62,7 @@ Win32TextEdit::Win32TextEdit (HWND parent, IPlatformTextEditCallback* textEdit)
 	CColor backColor = textEdit->platformGetBackColor ();
 	DWORD wxStyle = WS_EX_LAYERED;
 	wxStyle = WS_EX_COMPOSITED;
-	wstyle |= WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+	wstyle |= WS_CHILD | ES_AUTOHSCROLL | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 	if (textEdit->platformIsSecureTextEdit ())
 		wstyle |= ES_PASSWORD;
 	platformControl = CreateEditControl (wxStyle, stringHelper.getWideString (), wstyle, rect, parent);
@@ -104,10 +104,11 @@ Win32TextEdit::Win32TextEdit (HWND parent, IPlatformTextEditCallback* textEdit)
 	platformFont = CreateFontIndirect (&logfont);
 
 	SetWindowLongPtr (platformControl, GWLP_USERDATA, (__int3264)(LONG_PTR)this);
-	SendMessage (platformControl, WM_SETFONT, (WPARAM)platformFont, true);
+	SendMessage (platformControl, WM_SETFONT, (WPARAM)platformFont, FALSE);
 	SendMessage (platformControl, EM_SETMARGINS, EC_LEFTMARGIN|EC_RIGHTMARGIN, MAKELONG (0, 0));
 	SendMessage (platformControl, EM_SETSEL, 0, -1);
 	SendMessage (platformControl, EM_LIMITTEXT, 255, 0);
+	ShowWindow (platformControl, SW_SHOWNA);
 	SetFocus (platformControl);
 
 	oldWndProcEdit = (WINDOWSPROC)(LONG_PTR)SetWindowLongPtr (platformControl, GWLP_WNDPROC, (__int3264)(LONG_PTR)procEdit);
