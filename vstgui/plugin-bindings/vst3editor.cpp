@@ -463,6 +463,10 @@ void VST3Editor::init ()
 			const std::string* maxSizeStr = attr->getAttributeValue ("maxSize");
 			if (sizeStr)
 			{
+				std::string resolvedSize;
+				if (description->getVariable(sizeStr->c_str (), resolvedSize))
+					sizeStr = &resolvedSize;
+
 				CPoint p;
 				if (VST3EditorInternal::parseSize (*sizeStr, p))
 				{
