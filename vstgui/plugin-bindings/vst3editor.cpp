@@ -147,10 +147,7 @@ public:
 				return convertValueToString (value, utf8String);
 			});
 
-		if (parameter)
-			parameter->deferUpdate ();
-		else
-			updateControlValue (value);
+		updateControlValue (value);
 	}
 
 	void removeControl (CControl* control)
